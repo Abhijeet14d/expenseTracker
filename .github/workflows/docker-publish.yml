@@ -1,4 +1,4 @@
-name: Build and Push Docker Image
+name: Build, Push and Deploy
 
 on:
   push:
@@ -7,6 +7,7 @@ on:
 
 env:
   DOCKER_IMAGE: abhijeet14d/expense-tracker
+  ANSIBLE_HOST: 13.49.59.142
 
 jobs:
   build-and-push:
@@ -28,16 +29,58 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: .
-          file: ./Dockerfile
+          context: ./ExpenseTracker
+          file: ./ExpenseTracker/Dockerfile
           push: true
           tags: ${{ env.DOCKER_IMAGE }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Deployment Summary
+      - name: Docker Image Published
         run: |
           echo "### ✅ Docker Image Published!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Image:** ${{ env.DOCKER_IMAGE }}:latest" >> $GITHUB_STEP_SUMMARY
-          echo "**Status:** Successfully built and pushed to Docker Hub" >> $GITHUB_STEP_SUMMARY
+
+  deploy-via-ansible:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Setup SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          cat > ~/.ssh/deploy_key << 'EOF'
+          ${{ secrets.SSH_PRIVATE_KEY }}
+          EOF
+          sed -i 's/\r$//' ~/.ssh/deploy_key
+          echo "" >> ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          
+          # Disable strict host key checking
+          cat >> ~/.ssh/config << EOF
+          Host *
+            StrictHostKeyChecking no
+            UserKnownHostsFile=/dev/null
+          EOF
+
+      - name: Deploy via Ansible Control Node
+        run: |
+          echo "🚀 Connecting to Ansible Control Node..."
+          
+          ssh -i ~/.ssh/deploy_key ubuntu@${{ env.ANSIBLE_HOST }} << 'ENDSSH'
+            echo "Running Ansible playbook..."
+            cd ~/ansible
+            ansible-playbook -i inventory.ini playbook.yml -e "docker_image=${{ env.DOCKER_IMAGE }}:latest"
+          ENDSSH
+
+      - name: Deployment Complete
+        run: |
+          echo "### 🚀 Deployment Complete!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Ansible Control:** ${{ env.ANSIBLE_HOST }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Application URL:** http://13.50.158.117" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ New Docker image deployed successfully!" >> $GITHUB_STEP_SUMMARY
+
