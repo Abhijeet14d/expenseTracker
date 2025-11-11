@@ -51,25 +51,23 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          cat > ~/.ssh/deploy_key << 'EOF'
-          ${{ secrets.SSH_PRIVATE_KEY }}
-          EOF
-          sed -i 's/\r$//' ~/.ssh/deploy_key
-          echo "" >> ~/.ssh/deploy_key
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           
           # Disable strict host key checking
           cat >> ~/.ssh/config << EOF
-          Host *
+          Host ${{ env.ANSIBLE_HOST }}
             StrictHostKeyChecking no
             UserKnownHostsFile=/dev/null
+            IdentityFile ~/.ssh/deploy_key
           EOF
+          chmod 600 ~/.ssh/config
 
       - name: Deploy via Ansible Control Node
         run: |
           echo "🚀 Connecting to Ansible Control Node..."
           
-          ssh -i ~/.ssh/deploy_key ubuntu@${{ env.ANSIBLE_HOST }} << 'ENDSSH'
+          ssh ubuntu@${{ env.ANSIBLE_HOST }} << 'ENDSSH'
             echo "Running Ansible playbook..."
             cd ~/ansible
             ansible-playbook -i inventory.ini playbook.yml -e "docker_image=${{ env.DOCKER_IMAGE }}:latest"
