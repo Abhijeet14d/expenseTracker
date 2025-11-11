@@ -47,37 +47,20 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Setup SSH Key
-        run: |
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          
-          # Write key using base64 to avoid any formatting issues
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/deploy_key
-          
-          # Ensure proper line endings
-          dos2unix ~/.ssh/deploy_key 2>/dev/null || sed -i 's/\r$//' ~/.ssh/deploy_key
-          
-          # Set permissions
-          chmod 600 ~/.ssh/deploy_key
-          
-          # Verify key format
-          echo "Verifying SSH key..."
-          head -1 ~/.ssh/deploy_key
-          tail -1 ~/.ssh/deploy_key
-          
-          # Add to known hosts
-          ssh-keyscan -H ${{ env.ANSIBLE_HOST }} >> ~/.ssh/known_hosts
+      - name: Install SSH Key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          known_hosts: 'placeholder'
+
+      - name: Add known hosts
+        run: ssh-keyscan -H ${{ env.ANSIBLE_HOST }} >> ~/.ssh/known_hosts
 
       - name: Deploy via Ansible Control Node
         run: |
           echo "🚀 Connecting to Ansible Control Node..."
           
-          # Start ssh-agent
-          eval $(ssh-agent -s)
-          ssh-add ~/.ssh/deploy_key
-          
-          ssh -o StrictHostKeyChecking=no ubuntu@${{ env.ANSIBLE_HOST }} << 'ENDSSH'
+          ssh ubuntu@${{ env.ANSIBLE_HOST }} << 'ENDSSH'
             echo "Running Ansible playbook..."
             cd ~/ansible
             ansible-playbook -i inventory.ini playbook.yml -e "docker_image=${{ env.DOCKER_IMAGE }}:latest"
