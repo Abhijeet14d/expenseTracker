@@ -52,24 +52,28 @@ jobs:
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
           
-          # Write key to file
-          printf "%s" "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          # Write key using base64 to avoid any formatting issues
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/deploy_key
+          
+          # Ensure proper line endings
+          dos2unix ~/.ssh/deploy_key 2>/dev/null || sed -i 's/\r$//' ~/.ssh/deploy_key
+          
+          # Set permissions
           chmod 600 ~/.ssh/deploy_key
           
-          # Start ssh-agent and add key
-          eval $(ssh-agent -s)
-          ssh-add ~/.ssh/deploy_key
+          # Verify key format
+          echo "Verifying SSH key..."
+          head -1 ~/.ssh/deploy_key
+          tail -1 ~/.ssh/deploy_key
           
           # Add to known hosts
           ssh-keyscan -H ${{ env.ANSIBLE_HOST }} >> ~/.ssh/known_hosts
 
       - name: Deploy via Ansible Control Node
-        env:
-          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         run: |
           echo "🚀 Connecting to Ansible Control Node..."
           
-          # Ensure ssh-agent is available
+          # Start ssh-agent
           eval $(ssh-agent -s)
           ssh-add ~/.ssh/deploy_key
           
