@@ -105,7 +105,7 @@ function App() {
             <h1 className="text-4xl font-bold text-white">Expense Tracker</h1>
           </div>
           <p className="text-white text-opacity-90 text-lg">
-            Take control of your finances for today
+            Take control of your finances
           </p>
         </div>
 

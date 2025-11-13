@@ -74,4 +74,3 @@ jobs:
           echo "**Application URL:** http://13.50.158.117" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "✅ New Docker image deployed successfully!" >> $GITHUB_STEP_SUMMARY
-
