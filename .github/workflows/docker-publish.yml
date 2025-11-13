@@ -38,7 +38,7 @@ jobs:
 
       - name: Docker Image Published
         run: |
-          echo "### ✅ Docker Image Published!" >> $GITHUB_STEP_SUMMARY
+          echo "### Docker Image Published!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Image:** ${{ env.DOCKER_IMAGE }}:latest" >> $GITHUB_STEP_SUMMARY
 
@@ -58,7 +58,7 @@ jobs:
 
       - name: Deploy via Ansible Control Node
         run: |
-          echo "🚀 Connecting to Ansible Control Node..."
+          echo "Connecting to Ansible Control Node..."
           
           ssh ubuntu@${{ env.ANSIBLE_HOST }} << 'ENDSSH'
             echo "Running Ansible playbook..."
@@ -68,9 +68,9 @@ jobs:
 
       - name: Deployment Complete
         run: |
-          echo "### 🚀 Deployment Complete!" >> $GITHUB_STEP_SUMMARY
+          echo "### Deployment Complete!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Ansible Control:** ${{ env.ANSIBLE_HOST }}" >> $GITHUB_STEP_SUMMARY
           echo "**Application URL:** http://13.50.158.117" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ New Docker image deployed successfully!" >> $GITHUB_STEP_SUMMARY
+          echo "New Docker image deployed successfully!" >> $GITHUB_STEP_SUMMARY
